@@ -1,6 +1,6 @@
 FROM alpine:3.20
 
-# Instalar PHP 8.3 i extensions des dels repositoris oficials d'Alpine
+# Instalar PHP 8.3, extensions i el driver de connexió de dades
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
     php83 \
     php83-cli \
@@ -16,6 +16,7 @@ RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/
     php83-dom \
     php83-xmlwriter \
     php83-fileinfo \
+    mysql-client \
     composer
 
 # Crear l'enllaç simbòlic perquè 'php' apunti a 'php83'
@@ -34,5 +35,5 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev --no-script
 # Exposar el port de Railway
 EXPOSE 80
 
-# Comando d'arrencada
+# Comando d'arrencada forçant l'adreça IP global (0.0.0.0) perquè Railway hi pugui accedir
 CMD ["sh", "-c", "php artisan package:discover --ansi && php artisan serve --host=0.0.0.0 --port=80"]
