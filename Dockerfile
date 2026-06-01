@@ -1,6 +1,6 @@
 FROM alpine:3.20
 
-# Instalar PHP 8.3, extensions i el driver de connexió de dades
+# Instalar PHP 8.3 i les extensions necessàries
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
     php83 \
     php83-cli \
@@ -16,7 +16,6 @@ RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/
     php83-dom \
     php83-xmlwriter \
     php83-fileinfo \
-    mysql-client \
     composer
 
 # Crear l'enllaç simbòlic perquè 'php' apunti a 'php83'
@@ -28,12 +27,12 @@ WORKDIR /app
 # Copiar el codi del projecte
 COPY . /app
 
-# Instalar dependències de Composer (saltant scripts del build)
+# Instalar dependències de Composer (saltant scripts al build)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
 # Exposar el port de Railway
 EXPOSE 80
 
-# Comando d'arrencada forçant l'adreça IP global (0.0.0.0) perquè Railway hi pugui accedir
-CMD ["sh", "-c", "php artisan package:discover --ansi && php artisan serve --host=0.0.0.0 --port=80"]
+# Comando d'arrencada amb el servidor natiu de PHP apuntant a la carpeta public de Laravel
+CMD ["sh", "-c", "php artisan package:discover --ansi && php -S 0.0.0.0:80 -t public"]
