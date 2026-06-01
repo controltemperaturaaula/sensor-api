@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar només el PHP essencial per estalviar memòria RAM a Railway
+# Instalar PHP 8.3 i les extensions essencials
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     curl \
@@ -25,14 +25,24 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 WORKDIR /app
 
-# Copiar el codi net (gràcies al .dockerignore)
+# Copiar el codi net del projecte
 COPY . /app
 
-# Instalar dependències des de zero de forma optimitzada
+# Crear manualment l'estructura de carpetes que Laravel exigeix per arrencar
+RUN mkdir -p /app/storage/framework/cache/data \
+    && mkdir -p /app/storage/framework/sessions \
+    && mkdir -p /app/storage/framework/views \
+    && mkdir -p /app/storage/logs \
+    && mkdir -p /app/bootstrap/cache
+
+# Donar permisos totals d'escriptura a tota l'aplicació per evitar bloquejos de Linux
+RUN chmod -R 777 /app/storage /app/bootstrap/cache
+
+# Instalar dependències de Composer ignorant restriccions estrictes
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
 EXPOSE $PORT
 
-# Arrencada directa: evitem tancaments si falla artisan i aixequem el servidor web de baix consum
-CMD ["sh", "-c", "php artisan package:discover --ansi || true && php -S 0.0.0.0:$PORT -t public"]
+# COMANDO D'ARRENCADA DIRECTE: Netegem qualsevol configuració prèvia i aixequem el servidor web pur
+CMD ["sh", "-c", "php artisan config:clear || true && php -S 0.0.0.0:$PORT -t public"]
