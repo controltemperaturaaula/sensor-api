@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar PHP 8.3 i les extensions essencials
+# 1. Instalar paquets del sistema operatiu
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     curl \
@@ -20,13 +20,14 @@ RUN apt-get update && apt-get install -y \
     php8.3-zip \
     && apt-get clean
 
-# Instalar Composer
+# 2. Instalar Composer globalment
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+# 3. Configurar directori de treball i copiar el projecte
 WORKDIR /app
 COPY . /app
 
-# Crear carpetes estructurals i permisos de Laravel
+# 4. Crear estructures obligatòries de carpetes i aplicar permisos reals
 RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/storage/framework/sessions \
     && mkdir -p /app/storage/framework/views \
@@ -34,14 +35,14 @@ RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/bootstrap/cache \
     && chmod -R 777 /app/storage /app/bootstrap/cache
 
-# Instalar dependències
+# 5. Executar la instal·lació de Composer (Forçada en el build de forma seqüencial)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# CREAR FITXER DE SALUT DIRECTAMENT A LA CARPETA PUBLIC
+# 6. Crear el fitxer de salut estàtic de contingència
 RUN echo '<?php echo "OK";' > /app/public/health.php
 
 EXPOSE $PORT
 
-# ARRENCADA EXPLICITA: Entrem a la carpeta 'public' i aixequem el servidor des d'allà dins
-CMD ["sh", "-c", "php /app/artisan package:discover --ansi || true && cd /app/public && php -S 0.0.0.0:$PORT"]
+# 7. ARRENCADA NETEJA: Executem el servidor pur directament des de la carpeta pública
+CMD ["sh", "-c", "cd /app/public && php -S 0.0.0.0:$PORT"]
