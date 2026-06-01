@@ -1,6 +1,6 @@
 FROM alpine:3.20
 
-# Instalar PHP 8.3 i les extensions necessàries
+# Instalar PHP 8.3 i les extensions necessàries de Laravel
 RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
     php83 \
     php83-cli \
@@ -18,8 +18,9 @@ RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/
     php83-fileinfo \
     composer
 
-# Crear l'enllaç simbòlic perquè 'php' apunti a 'php83'
-RUN ln -sf /usr/bin/php83 /usr/bin/php
+# Enllaços simbòlics correctes perquè el sistema trobi 'php' i 'composer' globalment
+RUN ln -sf /usr/bin/php83 /usr/bin/php && \
+    ln -sf /usr/bin/composer /usr/local/bin/composer
 
 # Configurar el directori de treball
 WORKDIR /app
@@ -27,12 +28,12 @@ WORKDIR /app
 # Copiar el codi del projecte
 COPY . /app
 
-# Instalar dependències de Composer (saltant scripts al build)
+# Instalar dependències de Composer (sense scripts al build)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# Exposar el port de Railway
-EXPOSE 80
+# Indiquem a Railway que farem servir el seu port dinàmic
+EXPOSE $PORT
 
-# COMANDO DE DIAGNÒSTIC: Si falla el 'package:discover', veurem l'error i el servidor web s'aixecarà igualment
-CMD ["sh", "-c", "php artisan package:discover --ansi || echo '⚠️ ERROR EN LARAVEL DETECTAT'; php -S 0.0.0.0:80 -t public"]
+# COMANDO D'ARRENCADA: Escriurem el port real al log per comprovar-ho i aixequem el servidor natari usant la variable $PORT de Railway
+CMD ["sh", "-c", "echo \"🚀 Arrencant en el port ofert per Railway: $PORT\" && php artisan package:discover --ansi || true && php -S 0.0.0.0:$PORT -t public"]
