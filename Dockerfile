@@ -1,39 +1,47 @@
-FROM php:8.4-apache
+FROM dunglas/frankenphp:1-php8.4
 
-# 1. Instalar exclusivament les eines i extensions necessàries per a Laravel 13
-RUN apt-get update && apt-get install -y \
-    unzip \
-    git \
-    libxml2-dev \
-    libonig-dev \
-    && docker-php-ext-install pdo_mysql mbstring xml \
-    && apt-get clean
+# 1. Instalar el comando unzip del sistema (necessari per a Composer)
+RUN apt-get update && apt-get install -y unzip && apt-get clean
 
-# 2. Instalar Composer globalment
+# 2. Instalar extensions de PHP exigides per Laravel 13
+RUN install-php-extensions \
+    pcntl \
+    pdo_mysql \
+    mbstring \
+    xml \
+    openssl \
+    tokenizer \
+    ctype \
+    fileinfo \
+    zip
+
+# 3. Instalar Composer globalment
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# 3. Moure el directori de treball a la ruta per defecte d'Apache
-WORKDIR /var/www/html
-COPY . .
+# 4. Configurar directori de treball i copiar el projecte
+WORKDIR /app
+COPY . /app
 
-# 4. Crear carpetes estructurals i assignar permisos totals a l'usuari d'Apache (www-data)
-RUN mkdir -p storage/framework/cache/data \
-    && mkdir -p storage/framework/sessions \
-    && mkdir -p storage/framework/views \
-    && mkdir -p storage/logs \
-    && mkdir -p bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html \
-    && chmod -R 777 storage bootstrap/cache
+# 5. Crear estructures de carpetes i permisos reals de Laravel
+RUN mkdir -p /app/storage/framework/cache/data \
+    && mkdir -p /app/storage/framework/sessions \
+    && mkdir -p /app/storage/framework/views \
+    && mkdir -p /app/storage/logs \
+    && mkdir -p /app/bootstrap/cache \
+    && chmod -R 777 /app/storage /app/bootstrap/cache
 
-# 5. Instalar dependències de Composer de producció
+# 6. Instalar dependències de Composer de producció
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
-# 6. Crear el fitxer de salut estàtic
-RUN echo '<?php echo "OK";' > /var/www/html/health.php
+# 7. Crear el fitxer de salut estàtic de contingència
+RUN echo '<?php echo "OK";' > /app/public/health.php
 
-# Exposar el port estàndard
-EXPOSE 80
+# Forçar que FrankenPHP escolti en HTTP pur utilitzant el port que Railway demana
+ENV SERVER_NAME="http://:8080"
+ENV FRANKENPHP_HTTP_PORT=8080
 
-# El comando final es llançarà automàticament des del panell de Railway com hem configurat
-CMD ["apache2-foreground"]
+EXPOSE 8080
+
+# Arrencada directa indicant la carpeta pública
+CMD ["frankenphp", "php-server", "--listen", ":8080", "--public-dir", "public/"]
