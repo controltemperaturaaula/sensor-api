@@ -1,33 +1,23 @@
-FROM ubuntu:24.04
+FROM dunglas/frankenphp:1-php8.3
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Instalar extensions necessàries de PHP per a Laravel i l'extensió PDO per a base de dades
+RUN install-php-extensions \
+    pcntl \
+    pdo_mysql \
+    mbstring \
+    xml \
+    openssl \
+    tokenizer \
+    ctype \
+    fileinfo
 
-# 1. Instalar paquets del sistema operatiu
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    curl \
-    unzip \
-    git \
-    && add-apt-repository ppa:ondrej/php -y \
-    && apt-get update && apt-get install -y \
-    php8.3-cli \
-    php8.3-common \
-    php8.3-mbstring \
-    php8.3-xml \
-    php8.3-mysql \
-    php8.3-tokenizer \
-    php8.3-curl \
-    php8.3-zip \
-    && apt-get clean
-
-# 2. Instalar Composer globalment
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# 3. Configurar directori de treball i copiar el projecte
+# Configurar el directori de treball del servidor web
 WORKDIR /app
+
+# Copiar el codi del projecte
 COPY . /app
 
-# 4. Crear estructures obligatòries de carpetes i aplicar permisos reals
+# Crear estructures de carpetes de Laravel i permisos
 RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/storage/framework/sessions \
     && mkdir -p /app/storage/framework/views \
@@ -35,14 +25,18 @@ RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/bootstrap/cache \
     && chmod -R 777 /app/storage /app/bootstrap/cache
 
-# 5. Executar la instal·lació de Composer (Forçada en el build de forma seqüencial)
+# Instalar dependències de Composer de forma neta
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# 6. Crear el fitxer de salut estàtic de contingència
+# Crear el fitxer de salut estàtic dins de public
 RUN echo '<?php echo "OK";' > /app/public/health.php
 
+# Indicar el port dinàmic a Railway
 EXPOSE $PORT
 
-# 7. ARRENCADA NETEJA: Executem el servidor pur directament des de la carpeta pública
-CMD ["sh", "-c", "cd /app/public && php -S 0.0.0.0:$PORT"]
+# Configurar variables perquè FrankenPHP s'adapti automàticament al port de Railway
+ENV SERVER_NAME=":${PORT}"
+
+# Arrencada d'alta eficiència apuntant a la carpeta pública de Laravel
+CMD ["frankenphp", "php-server", "--public-dir", "public/"]
