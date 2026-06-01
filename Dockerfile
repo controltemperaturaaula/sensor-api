@@ -1,6 +1,6 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
-# 1. Instalar herramientas de sistema y extensiones de PHP para Laravel
+# 1. Instalar herramientas de sistema y extensiones de PHP para Laravel 13
 RUN apt-get update && apt-get install -y \
     unzip \
     git \
@@ -16,8 +16,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 # 4. Configurar Apache para apuntar a la carpeta pública de Laravel
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
 # 5. Activar el módulo rewrite de Apache
 RUN a2enmod rewrite
@@ -26,7 +26,7 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 
-# 7. Crear carpetas estructurales y dar permisos absolutos para evitar bloqueos
+# 7. Crear carpetas estructurales y dar permisos absolutos
 RUN mkdir -p storage/framework/cache/data \
     && mkdir -p storage/framework/sessions \
     && mkdir -p storage/framework/views \
@@ -35,9 +35,9 @@ RUN mkdir -p storage/framework/cache/data \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 777 storage bootstrap/cache
 
-# 8. Instalar dependencias de Composer ignorando restricciones de plataforma
+# 8. Instalar dependencias de Composer normales (sin ignorar plataforma, porque ya estamos en PHP 8.4)
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
 # Exponer el puerto estándar 80
 EXPOSE 80
