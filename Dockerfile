@@ -1,11 +1,10 @@
 FROM alpine:3.20
 
-# Instalar PHP 8.3 i les extensions necessàries de Laravel directament des de paquets precompilats
-RUN apk add --no-cache \
+# Instalar PHP 8.3 i extensions des dels repositoris oficials d'Alpine
+RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.20/community \
     php83 \
     php83-cli \
     php83-common \
-    php83-composer \
     php83-mbstring \
     php83-xml \
     php83-openssl \
@@ -16,9 +15,10 @@ RUN apk add --no-cache \
     php83-session \
     php83-dom \
     php83-xmlwriter \
-    php83-fileinfo
+    php83-fileinfo \
+    composer
 
-# Crear un enllaç simbòlic perquè el comando 'php' apunti a 'php83'
+# Crear l'enllaç simbòlic perquè 'php' apunti a 'php83'
 RUN ln -sf /usr/bin/php83 /usr/bin/php
 
 # Configurar el directori de treball
@@ -27,12 +27,12 @@ WORKDIR /app
 # Copiar el codi del projecte
 COPY . /app
 
-# Instalar dependències de Composer (saltant-nos els scripts problemàtics)
+# Instalar dependències de Composer (saltant scripts del build)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
 # Exposar el port de Railway
 EXPOSE 80
 
-# Arrencar el servidor integrat de Laravel
+# Comando d'arrencada
 CMD ["sh", "-c", "php artisan package:discover --ansi && php artisan serve --host=0.0.0.0 --port=80"]
