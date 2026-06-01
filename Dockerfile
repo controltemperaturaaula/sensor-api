@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar PHP 8.3 essencial
+# Instalar PHP 8.3 i les extensions essencials
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     curl \
@@ -26,7 +26,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 WORKDIR /app
 COPY . /app
 
-# Crear carpetes i permisos
+# Crear carpetes estructurals i permisos de Laravel
 RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/storage/framework/sessions \
     && mkdir -p /app/storage/framework/views \
@@ -38,10 +38,10 @@ RUN mkdir -p /app/storage/framework/cache/data \
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# CREAR UN FITXER D'EMERGÈNCIA: Si Laravel falla, aquest fitxer respondrà un OK a Railway
-RUN echo '<?php echo "API en línia (Mode Contingència)";' > /app/public/health.php
+# CREAR FITXER DE SALUT DIRECTAMENT A LA CARPETA PUBLIC
+RUN echo '<?php echo "OK";' > /app/public/health.php
 
 EXPOSE $PORT
 
-# ARRENCADA: Si 'package:discover' falla, aixequem el servidor igualment apuntant al fitxer de salut
-CMD ["sh", "-c", "php artisan package:discover --ansi || true && php -S 0.0.0.0:$PORT public/health.php"]
+# ARRENCADA EXPLICITA: Entrem a la carpeta 'public' i aixequem el servidor des d'allà dins
+CMD ["sh", "-c", "php /app/artisan package:discover --ansi || true && cd /app/public && php -S 0.0.0.0:$PORT"]
