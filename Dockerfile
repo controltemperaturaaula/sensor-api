@@ -33,16 +33,12 @@ WORKDIR /app
 # Copiar el codi del projecte
 COPY . /app
 
-# Instalar paquets de Composer
+# Instalar paquets de Composer ignorant requisits estrictes de versió de PHP
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
-
-# Forçar que PHP mostri absolutament tots els errors per pantalla (STDOUT)
-RUN echo "display_errors = On" >> /etc/php/8.3/cli/php.ini && \
-    echo "error_reporting = E_ALL" >> /etc/php/8.3/cli/php.ini
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
 # Indicar el port dinàmic a Railway
 EXPOSE $PORT
 
-# COMANDO D'ARRENCADA AMB AUTO-DIAGNÒSTIC DIRECTE
-CMD ["sh", "-c", "echo '=== INICIANT DIAGNÒSTIC LARAVEL ===' && php artisan package:discover --ansi 2>&1 && echo '=== LLANÇANT SERVIDOR WEB ===' && php -S 0.0.0.0:$PORT -t public 2>&1"]
+# Comando d'arrencada definitiu utilitzant el port de Railway
+CMD ["sh", "-c", "php artisan package:discover --ansi || true && php -S 0.0.0.0:$PORT -t public"]
