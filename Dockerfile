@@ -17,5 +17,5 @@ ENV APP_ENV=production
 # Exponer el puerto que nos da Railway
 EXPOSE 80
 
-# Comando de arranque: ejecutar el descubrimiento y encender el servidor
-CMD php artisan package:discover --ansi && /start.sh
+# Comando de arranque optimizado en formato JSON
+CMD ["sh", "-c", "php artisan package:discover --ansi && /start.sh"]
