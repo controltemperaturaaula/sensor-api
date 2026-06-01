@@ -1,12 +1,13 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "providers": ["php"],
-    "aptPackages": ["php-cli", "php-common", "php-curl", "php-mbstring", "php-xml", "php-zip"]
+    "builder": "NIXPACKS"
   },
   "deploy": {
     "startCommand": "php artisan serve --host=0.0.0.0 --port=$PORT",
     "restartPolicyType": "ON_FAILURE"
+  },
+  "variables": {
+    "NIXPACKS_PHP_EXTENSIONS": "dom,mbstring,xml,tokenizer,xmlwriter,xmlreader,ctype,json"
   }
 }
