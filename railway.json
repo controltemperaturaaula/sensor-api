@@ -1,10 +1,12 @@
 {
-    "$schema": "https://railway.app/railway.schema.json",
-    "build": {
-      "builder": "NIXPACKS"
-    },
-    "deploy": {
-      "startCommand": "php artisan serve --host=0.0.0.0 --port=$PORT",
-      "restartPolicyType": "ON_FAILURE"
-    }
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "providers": ["php"],
+    "aptPackages": ["php-cli", "php-common", "php-curl", "php-mbstring", "php-xml", "php-zip"]
+  },
+  "deploy": {
+    "startCommand": "php artisan serve --host=0.0.0.0 --port=$PORT",
+    "restartPolicyType": "ON_FAILURE"
   }
+}
