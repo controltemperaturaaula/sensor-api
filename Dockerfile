@@ -34,5 +34,5 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev --no-script
 # Exposar el port de Railway
 EXPOSE 80
 
-# Comando d'arrencada amb el servidor natiu de PHP apuntant a la carpeta public de Laravel
-CMD ["sh", "-c", "php artisan package:discover --ansi && php -S 0.0.0.0:80 -t public"]
+# COMANDO DE DIAGNÒSTIC: Si falla el 'package:discover', veurem l'error i el servidor web s'aixecarà igualment
+CMD ["sh", "-c", "php artisan package:discover --ansi || echo '⚠️ ERROR EN LARAVEL DETECTAT'; php -S 0.0.0.0:80 -t public"]
