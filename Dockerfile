@@ -1,6 +1,9 @@
 FROM dunglas/frankenphp:1-php8.3
 
-# Instalar extensions de PHP necessàries per a Laravel
+# Instalar 'unzip' al sistema Linux (necessari per a Composer)
+RUN apt-get update && apt-get install -y unzip && apt-get clean
+
+# Instalar extensions de PHP (afegint l'extensió 'zip')
 RUN install-php-extensions \
     pcntl \
     pdo_mysql \
@@ -9,9 +12,10 @@ RUN install-php-extensions \
     openssl \
     tokenizer \
     ctype \
-    fileinfo
+    fileinfo \
+    zip
 
-# Instalar Composer manualment de forma oficial dins de la imatge
+# Instalar Composer globalment
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Configurar el directori de treball
@@ -28,15 +32,15 @@ RUN mkdir -p /app/storage/framework/cache/data \
     && mkdir -p /app/bootstrap/cache \
     && chmod -R 777 /app/storage /app/bootstrap/cache
 
-# Instalar dependències de Composer (ara que ja tenim Composer instal·lat)
+# Instalar dependències de Composer (ara sí que podrà descomprimir-les)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# Crear el fitxer de salut estàtic dins de public
+# Crear el fitxer de salut de contingència dins de public
 RUN echo '<?php echo "OK";' > /app/public/health.php
 
-# Configurem FrankenPHP perquè agafi el port dinàmic que Railway li injectarà en arrencar
+# Configurar port estàndard per a FrankenPHP
 ENV SERVER_NAME=":8080"
 
-# Arrencada d'alta eficiència apuntant a la carpeta pública de Laravel
+# Arrencada en mode servidor web professional apuntant a public/
 CMD ["frankenphp", "php-server", "--public-dir", "public/"]
