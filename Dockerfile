@@ -1,21 +1,15 @@
 FROM ubuntu:24.04
 
-# Evitar preguntes interactives
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependències, repositori de PHP i Nginx
+# Instalar només el PHP essencial per estalviar memòria RAM a Railway
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     curl \
     unzip \
     git \
-    nginx \
     && add-apt-repository ppa:ondrej/php -y \
-    && apt-get update
-
-# Instalar PHP 8.3 FPM i extensions per a Laravel
-RUN apt-get install -y \
-    php8.3-fpm \
+    && apt-get update && apt-get install -y \
     php8.3-cli \
     php8.3-common \
     php8.3-mbstring \
@@ -29,35 +23,16 @@ RUN apt-get install -y \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar directori de treball
-WORKDIR /var/www/html
+WORKDIR /app
 
-# Copiar el projecte
-COPY . .
+# Copiar el codi net (gràcies al .dockerignore)
+COPY . /app
 
-# Instalar paquets de Composer ignorant restriccions estrictes
+# Instalar dependències des de zero de forma optimitzada
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --ignore-platform-reqs
 
-# Configurar Nginx per apuntar a la carpeta pública de Laravel i acceptar el port de Railway
-RUN echo 'server { \n\
-    listen 80 default_server; \n\
-    root /var/www/html/public; \n\
-    index index.php index.html; \n\
-    location / { \n\
-        try_files $uri $uri/ /index.php?$query_string; \n\
-    } \n\
-    location ~ \.php$ { \n\
-        include snippets/fastcgi-php.conf; \n\
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock; \n\
-    } \n\
-}' > /etc/nginx/sites-available/default
-
-# Ajustar els permisos per a Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Indicar el port dinàmic a Railway
 EXPOSE $PORT
 
-# Arrencada: Reconfigurar el port de Nginx dinàmicament en arrencar, encendre FPM i llançar Nginx en primer pla
-CMD ["sh", "-c", "sed -i \"s/listen 80/listen $PORT/g\" /etc/nginx/sites-available/default && service php8.3-fpm start && nginx -g \"daemon off;\""]
+# Arrencada directa: evitem tancaments si falla artisan i aixequem el servidor web de baix consum
+CMD ["sh", "-c", "php artisan package:discover --ansi || true && php -S 0.0.0.0:$PORT -t public"]
