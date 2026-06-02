@@ -38,10 +38,15 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev --no-script
 RUN echo '<?php echo "OK";' > /app/public/health.php
 
 # Forçar que FrankenPHP escolti en HTTP pur utilitzant el port que Railway demana
-ENV SERVER_NAME="http://:8080"
-ENV FRANKENPHP_HTTP_PORT=8080
+# ENV SERVER_NAME="http://:8080"
+# ENV FRANKENPHP_HTTP_PORT=8080
 
-EXPOSE 8080
+# EXPOSE 8080
+# Diem a FrankenPHP que escolti pel port dinàmic que li doni Railway, en HTTP pur
+ENV SERVER_NAME=":80"
+ENV FRANKENPHP_HTTP_PORT=80
+
+EXPOSE 80
 
 # Arrencada directa indicant la carpeta pública
 CMD ["frankenphp", "php-server", "--listen", ":8080", "--public-dir", "public/"]
