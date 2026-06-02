@@ -43,10 +43,10 @@ RUN echo '<?php echo "OK";' > /app/public/health.php
 
 # EXPOSE 8080
 # Diem a FrankenPHP que escolti pel port dinàmic que li doni Railway, en HTTP pur
-ENV SERVER_NAME=":80"
-ENV FRANKENPHP_HTTP_PORT=80
+ENV SERVER_NAME=":8080"
+ENV FRANKENPHP_HTTP_PORT=8080
 
-EXPOSE 80
+EXPOSE 8080
 
 # Arrencada directa indicant la carpeta pública
 CMD ["frankenphp", "php-server", "--listen", ":8080", "--public-dir", "public/"]
